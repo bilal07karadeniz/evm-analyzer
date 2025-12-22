@@ -35,7 +35,7 @@ A command-line tool for gathering smart contract security data from EVM-compatib
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/bilal07karadeniz/evm-analyzer
 cd evm_analyzer
 
 # Install dependencies
