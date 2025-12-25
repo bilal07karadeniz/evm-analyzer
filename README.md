@@ -105,6 +105,7 @@ python gatherer.py 0x... bnb      # BSC (alias)
 | `-r, --rpc` | Custom RPC URL |
 | `-p, --port` | Anvil port (default: 8545) |
 | `--anvil-url` | Connect to existing Anvil instance (uses Anvil's current block) |
+| `--dex-verbose` | Show factory and router addresses in DEXes section |
 
 ## Using with External Anvil
 
@@ -136,10 +137,6 @@ The tool auto-detects running Anvil instances by matching chain ID.
 ## Example Output
 
 ```markdown
-# PEPE Analysis
-**Address:** `0x6982508145454Ce325dDbE47a25d4ec3d2311933`
-**Chain:** ethereum
-
 ## Token Info
 - Name: Pepe
 - Symbol: PEPE
@@ -148,7 +145,7 @@ The tool auto-detects running Anvil instances by matching chain ID.
 - Price: $0.00002341
 - Price (ETH): 0.00000000669 ETH
 
-## Ownership
+### Ownership
 - Owner: `0x0000000000000000000000000000000000000000` (renounced)
 - Has burn()
 
@@ -160,6 +157,25 @@ The tool auto-detects running Anvil instances by matching chain ID.
 | Uniswap V2 | PEPE/WETH | 202.19B PEPE / 1.35K WETH | $9.47M |
 | Uniswap V3 (1.00%) | PEPE/WETH | 7.37B PEPE / 49.27 WETH | $344.78K |
 | **Total** | | **1.96T PEPE** | **$91.85M** |
+
+### Queried DEXes
+1. Uniswap V2
+2. Uniswap V3
+3. SushiSwap
+4. Curve
+5. Balancer
+```
+
+With `--dex-verbose` flag:
+```markdown
+### Queried DEXes
+1. **Uniswap V2**
+   - Factory: `0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f`
+   - Router: `0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D`
+2. **Uniswap V3**
+   - Factory: `0x1F98431c8aD98523631AE4a59f267346ea31F984`
+   - Quoter: `0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6`
+...
 ```
 
 ## Test Addresses

@@ -1,6 +1,6 @@
 """Markdown report generator - optimized for token usage."""
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from dataclasses import asdict
 
 from modules.token import TokenInfo
@@ -8,6 +8,7 @@ from modules.ownership import OwnershipInfo
 from modules.proxy import ProxyInfo
 from modules.security import SecurityInfo
 from dexes.base import Pool
+from config import DEX_FACTORIES
 
 
 class MarkdownReport:
@@ -24,6 +25,7 @@ class MarkdownReport:
         security: SecurityInfo,
         pools: List[Pool],
         chain: str,
+        dex_verbose: bool = False,
     ) -> str:
         """Generate the full markdown report.
 
@@ -36,28 +38,21 @@ class MarkdownReport:
             security: Security information
             pools: Top liquidity pools
             chain: Chain name
+            dex_verbose: Show factory/router addresses in DEXes section
 
         Returns:
             Markdown string
         """
         self.lines = []
 
-        self._add_header(token, chain)
         self._add_token_info(token)
         self._add_ownership(ownership)
         self._add_proxy(proxy)
         self._add_security(security)
         self._add_liquidity(pools, token.address, token.symbol, token.decimals)
+        self._add_queried_dexes(chain, dex_verbose)
 
         return "\n".join(self.lines)
-
-    def _add_header(self, token: TokenInfo, chain: str):
-        """Add report header."""
-        symbol = token.symbol or "Unknown"
-        self.lines.append(f"# {symbol} Analysis")
-        self.lines.append(f"**Address:** `{token.address}`")
-        self.lines.append(f"**Chain:** {chain}")
-        self.lines.append("")
 
     def _add_token_info(self, token: TokenInfo):
         """Add token basic info."""
@@ -112,7 +107,7 @@ class MarkdownReport:
             items.append(f"Roles: {', '.join(ownership.roles_detected)}")
 
         if items:
-            self.lines.append("## Ownership")
+            self.lines.append("### Ownership")
             for item in items:
                 self.lines.append(f"- {item}")
             self.lines.append("")
@@ -122,7 +117,7 @@ class MarkdownReport:
         if not proxy.is_proxy:
             return
 
-        self.lines.append("## Proxy")
+        self.lines.append("### Proxy")
         self.lines.append(f"- Type: {proxy.proxy_type}")
         if proxy.implementation:
             self.lines.append(f"- Implementation: `{proxy.implementation}`")
@@ -153,18 +148,21 @@ class MarkdownReport:
             items.append("Trading cooldown enabled")
 
         if items:
-            self.lines.append("## Security Flags")
+            self.lines.append("### Security Flags")
             for item in items:
                 self.lines.append(f"- {item}")
             self.lines.append("")
 
     def _add_liquidity(self, pools: List[Pool], token_address: str, token_symbol: str, token_decimals: int):
-        """Add top liquidity pools."""
+        """Add top liquidity pools sorted by liquidity (high to low)."""
         if not pools:
             self.lines.append("## Liquidity")
             self.lines.append("No pools found")
             self.lines.append("")
             return
+
+        # Sort pools by liquidity USD descending
+        sorted_pools = sorted(pools, key=lambda p: p.liquidity_usd, reverse=True)[:5]
 
         self.lines.append("## Liquidity (Top 5)")
         self.lines.append("")
@@ -175,7 +173,7 @@ class MarkdownReport:
         total_token_reserve = 0
         token_address_lower = token_address.lower()
 
-        for pool in pools[:5]:
+        for pool in sorted_pools:
             pair = f"{pool.token0_symbol}/{pool.token1_symbol}"
             liq = self._format_usd(pool.liquidity_usd)
             fee = f" ({pool.fee_tier/10000:.2f}%)" if pool.fee_tier else ""
@@ -247,3 +245,39 @@ class MarkdownReport:
             return f"{value:.12f}"
         else:
             return "0"
+
+    def _add_queried_dexes(self, chain: str, verbose: bool = False):
+        """Add section showing which DEXes were queried."""
+        dex_config = DEX_FACTORIES.get(chain, {})
+        if not dex_config:
+            return
+
+        self.lines.append("### Queried DEXes")
+
+        # Map internal names to display names
+        dex_names = {
+            "uniswap_v2": "Uniswap V2",
+            "uniswap_v3": "Uniswap V3",
+            "sushiswap": "SushiSwap",
+            "curve": "Curve",
+            "balancer": "Balancer",
+            "pancakeswap_v2": "PancakeSwap V2",
+            "pancakeswap_v3": "PancakeSwap V3",
+            "biswap": "BiSwap",
+            "mdex": "MDEX",
+            "apeswap": "ApeSwap",
+        }
+
+        for idx, (dex_key, addresses) in enumerate(dex_config.items(), 1):
+            dex_name = dex_names.get(dex_key, dex_key)
+
+            if verbose:
+                self.lines.append(f"{idx}. **{dex_name}**")
+                for addr_type, addr in addresses.items():
+                    # Capitalize address type (factory -> Factory)
+                    addr_label = addr_type.capitalize()
+                    self.lines.append(f"   - {addr_label}: `{addr}`")
+            else:
+                self.lines.append(f"{idx}. {dex_name}")
+
+        self.lines.append("")

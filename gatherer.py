@@ -122,6 +122,12 @@ Examples:
         help="Connect to existing Anvil instance",
     )
 
+    parser.add_argument(
+        "--dex-verbose",
+        action="store_true",
+        help="Show factory and router addresses in DEXes section",
+    )
+
     args = parser.parse_args()
 
     try:
@@ -274,6 +280,7 @@ def run_analysis(args):
         security=security_info,
         pools=pools,
         chain=args.chain,
+        dex_verbose=args.dex_verbose,
     )
 
     # Output
