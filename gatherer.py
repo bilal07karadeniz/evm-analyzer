@@ -183,19 +183,18 @@ def run_analysis(args):
             if not web3.is_connected():
                 raise RuntimeError(f"Cannot connect to Anvil at {anvil_url}")
 
-            # Reset Anvil to specified block or latest (with RPC fallback)
-            if args.rpc:
-                rpc_urls = [args.rpc]
-            else:
-                rpc_urls = CHAINS[args.chain].rpc_urls
-
+            # Only reset if --block is explicitly specified
+            # Otherwise use Anvil's current fork block as-is
             if args.block:
+                if args.rpc:
+                    rpc_urls = [args.rpc]
+                else:
+                    rpc_urls = CHAINS[args.chain].rpc_urls
                 progress.update(task, description=f"Resetting to block {args.block}...")
                 try_rpc_with_fallback(web3, rpc_urls, args.block)
                 progress.update(task, description=f"Connected (block {args.block})")
             else:
-                progress.update(task, description="Resetting to latest block...")
-                try_rpc_with_fallback(web3, rpc_urls)
+                # Use Anvil as-is, just get current block for display
                 block_num = web3.eth.block_number
                 progress.update(task, description=f"Connected (block {block_num})")
         else:

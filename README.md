@@ -104,11 +104,21 @@ python gatherer.py 0x... bnb      # BSC (alias)
 | `-o, --output` | Save report to file |
 | `-r, --rpc` | Custom RPC URL |
 | `-p, --port` | Anvil port (default: 8545) |
-| `--anvil-url` | Connect to existing Anvil instance |
+| `--anvil-url` | Connect to existing Anvil instance (uses Anvil's current block) |
 
-## Starting Anvil Manually
+## Using with External Anvil
 
-If you prefer to manage Anvil yourself:
+When connecting to an existing Anvil instance via `--anvil-url`, the tool uses Anvil's current fork block automatically. No need to specify `--block` again:
+
+```bash
+# Start Anvil with specific block
+anvil --fork-url https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY --fork-block-number 16433820 --port 10000
+
+# Connect to it - automatically uses block 16433820
+python gatherer.py 0x... --anvil-url http://127.0.0.1:10000
+```
+
+### Starting Anvil Manually
 
 ```bash
 # Ethereum
@@ -116,6 +126,9 @@ anvil --fork-url https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY --port 8545
 
 # BSC
 anvil --fork-url https://bsc-dataseed.bnbchain.org --port 8546 --chain-id 56
+
+# With specific block
+anvil --fork-url https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY --fork-block-number 18000000 --port 8545
 ```
 
 The tool auto-detects running Anvil instances by matching chain ID.
@@ -132,6 +145,8 @@ The tool auto-detects running Anvil instances by matching chain ID.
 - Symbol: PEPE
 - Decimals: 18
 - Supply: 420.69T
+- Price: $0.00002341
+- Price (ETH): 0.00000000669 ETH
 
 ## Ownership
 - Owner: `0x0000000000000000000000000000000000000000` (renounced)
@@ -139,11 +154,12 @@ The tool auto-detects running Anvil instances by matching chain ID.
 
 ## Liquidity (Top 5)
 
-| DEX | Pair | Liquidity |
-|-----|------|-----------|
-| Uniswap V3 (0.30%) | PEPE/WETH | $82.04M |
-| Uniswap V2 | PEPE/WETH | $9.47M |
-| Uniswap V3 (1.00%) | PEPE/WETH | $344.78K |
+| DEX | Pair | Reserves | Liquidity |
+|-----|------|----------|-----------|
+| Uniswap V3 (0.30%) | PEPE/WETH | 1.75T PEPE / 11.73K WETH | $82.04M |
+| Uniswap V2 | PEPE/WETH | 202.19B PEPE / 1.35K WETH | $9.47M |
+| Uniswap V3 (1.00%) | PEPE/WETH | 7.37B PEPE / 49.27 WETH | $344.78K |
+| **Total** | | **1.96T PEPE** | **$91.85M** |
 ```
 
 ## Test Addresses
