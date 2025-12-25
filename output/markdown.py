@@ -47,7 +47,7 @@ class MarkdownReport:
         self._add_ownership(ownership)
         self._add_proxy(proxy)
         self._add_security(security)
-        self._add_liquidity(pools)
+        self._add_liquidity(pools, token.address, token.symbol, token.decimals)
 
         return "\n".join(self.lines)
 
@@ -72,6 +72,10 @@ class MarkdownReport:
             info_parts.append(f"Decimals: {token.decimals}")
         if token.total_supply_formatted:
             info_parts.append(f"Supply: {token.total_supply_formatted}")
+        if token.price_usd is not None:
+            info_parts.append(f"Price: {self._format_price(token.price_usd)}")
+        if token.price_native is not None and token.native_symbol:
+            info_parts.append(f"Price ({token.native_symbol}): {self._format_native_price(token.price_native)} {token.native_symbol}")
 
         for part in info_parts:
             self.lines.append(f"- {part}")
@@ -154,7 +158,7 @@ class MarkdownReport:
                 self.lines.append(f"- {item}")
             self.lines.append("")
 
-    def _add_liquidity(self, pools: List[Pool]):
+    def _add_liquidity(self, pools: List[Pool], token_address: str, token_symbol: str, token_decimals: int):
         """Add top liquidity pools."""
         if not pools:
             self.lines.append("## Liquidity")
@@ -164,20 +168,54 @@ class MarkdownReport:
 
         self.lines.append("## Liquidity (Top 5)")
         self.lines.append("")
-        self.lines.append("| DEX | Pair | Liquidity |")
-        self.lines.append("|-----|------|-----------|")
+        self.lines.append("| DEX | Pair | Reserves | Liquidity |")
+        self.lines.append("|-----|------|----------|-----------|")
+
+        total_liquidity = 0
+        total_token_reserve = 0
+        token_address_lower = token_address.lower()
 
         for pool in pools[:5]:
             pair = f"{pool.token0_symbol}/{pool.token1_symbol}"
             liq = self._format_usd(pool.liquidity_usd)
             fee = f" ({pool.fee_tier/10000:.2f}%)" if pool.fee_tier else ""
-            self.lines.append(f"| {pool.dex_name}{fee} | {pair} | {liq} |")
+            # Format reserves with symbols
+            r0 = self._format_amount(pool.reserve0, pool.token0_decimals)
+            r1 = self._format_amount(pool.reserve1, pool.token1_decimals)
+            reserves = f"{r0} {pool.token0_symbol} / {r1} {pool.token1_symbol}"
+            self.lines.append(f"| {pool.dex_name}{fee} | {pair} | {reserves} | {liq} |")
+            total_liquidity += pool.liquidity_usd
 
+            # Sum the analyzed token's reserve
+            if pool.token0.lower() == token_address_lower:
+                total_token_reserve += pool.reserve0
+            elif pool.token1.lower() == token_address_lower:
+                total_token_reserve += pool.reserve1
+
+        # Format total token amount
+        total_token_formatted = self._format_amount(total_token_reserve, token_decimals or 18)
+        self.lines.append(f"| **Total** | | **{total_token_formatted} {token_symbol}** | **{self._format_usd(total_liquidity)}** |")
         self.lines.append("")
+
+    def _format_amount(self, value: int, decimals: int) -> str:
+        """Format token amount with decimals."""
+        amount = value / (10 ** decimals)
+        if amount >= 1_000_000_000:
+            return f"{amount / 1_000_000_000:.2f}B"
+        elif amount >= 1_000_000:
+            return f"{amount / 1_000_000:.2f}M"
+        elif amount >= 1_000:
+            return f"{amount / 1_000:.2f}K"
+        elif amount >= 1:
+            return f"{amount:.2f}"
+        else:
+            return f"{amount:.6f}"
 
     def _format_usd(self, value: float) -> str:
         """Format USD value."""
-        if value >= 1_000_000:
+        if value >= 1_000_000_000:
+            return f"${value / 1_000_000_000:.2f}B"
+        elif value >= 1_000_000:
             return f"${value / 1_000_000:.2f}M"
         elif value >= 1_000:
             return f"${value / 1_000:.2f}K"
@@ -185,3 +223,27 @@ class MarkdownReport:
             return f"${value:.2f}"
         else:
             return "$0"
+
+    def _format_price(self, value: float) -> str:
+        """Format token price (handles very small values)."""
+        if value >= 1:
+            return f"${value:.2f}"
+        elif value >= 0.01:
+            return f"${value:.4f}"
+        elif value >= 0.0001:
+            return f"${value:.6f}"
+        elif value > 0:
+            return f"${value:.10f}"
+        else:
+            return "$0"
+
+    def _format_native_price(self, value: float) -> str:
+        """Format price in native currency (ETH/BNB)."""
+        if value >= 1:
+            return f"{value:.4f}"
+        elif value >= 0.0001:
+            return f"{value:.8f}"
+        elif value > 0:
+            return f"{value:.12f}"
+        else:
+            return "0"

@@ -35,7 +35,7 @@ CHAINS: Dict[str, ChainConfig] = {
         name="Ethereum Mainnet",
         chain_id=1,
         rpc_urls=[
-            "https://eth-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY",
+            "https://eth-mainnet.g.alchemy.com/v2/your_api_key_here",
             "https://eth.llamarpc.com",
             "https://rpc.ankr.com/eth",
             "https://ethereum.publicnode.com",
@@ -54,7 +54,7 @@ CHAINS: Dict[str, ChainConfig] = {
         rpc_urls=[
             # For BSC archive queries, get a free API key from NodeReal:
             # https://nodereal.io/api-marketplace/bsc-rpc
-            "https://bsc-mainnet.nodereal.io/v1/YOUR_NODEREAL_KEY",
+            "https://bsc-mainnet.nodereal.io/v1/YOUR_API_KEY_HERE",
             "https://bsc-dataseed.bnbchain.org",
             "https://bsc-dataseed1.defibit.io",
             "https://rpc.ankr.com/bsc",

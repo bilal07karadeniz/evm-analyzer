@@ -249,6 +249,17 @@ def run_analysis(args):
                 include_base_pair=True,
             )
 
+            # Calculate price from pools
+            if pools:
+                progress.update(task, description="Calculating price...")
+                price_usd, price_native, native_symbol, source = token_analyzer.calculate_price_from_pools(
+                    pools, args.address, CHAINS[args.chain]
+                )
+                token_info.price_usd = price_usd
+                token_info.price_native = price_native
+                token_info.native_symbol = native_symbol
+                token_info.price_source = source
+
             progress.update(task, description="Generating report...")
 
         finally:

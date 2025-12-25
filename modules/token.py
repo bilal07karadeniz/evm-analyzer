@@ -17,6 +17,10 @@ class TokenInfo:
     decimals: Optional[int]
     total_supply: Optional[int]
     total_supply_formatted: Optional[str]
+    price_usd: Optional[float] = None
+    price_native: Optional[float] = None  # Price in ETH/BNB
+    native_symbol: Optional[str] = None   # "ETH" or "BNB"
+    price_source: Optional[str] = None
 
 
 class TokenAnalyzer:
@@ -128,3 +132,53 @@ class TokenAnalyzer:
             return balance
         except Exception:
             return None
+
+    def calculate_price_from_pools(self, pools, token_address: str, chain_config) -> tuple:
+        """Calculate token price from liquidity pool reserves.
+
+        Args:
+            pools: List of Pool objects
+            token_address: Token address to get price for
+            chain_config: Chain configuration with stablecoins and wrapped_native
+
+        Returns:
+            Tuple of (price_usd, price_native, native_symbol, price_source)
+        """
+        if not pools:
+            return None, None, None, None
+
+        token_address = token_address.lower()
+        native_symbol = "ETH" if chain_config.chain_id == 1 else "BNB"
+        native_price_usd = 3500 if chain_config.chain_id == 1 else 600
+
+        for pool in pools:
+            # Determine which side is our token
+            if pool.token0.lower() == token_address:
+                our_reserve = pool.reserve0 / (10 ** pool.token0_decimals)
+                other_reserve = pool.reserve1 / (10 ** pool.token1_decimals)
+                other_token = pool.token1
+            else:
+                our_reserve = pool.reserve1 / (10 ** pool.token1_decimals)
+                other_reserve = pool.reserve0 / (10 ** pool.token0_decimals)
+                other_token = pool.token0
+
+            if our_reserve == 0:
+                continue
+
+            other_token_lower = other_token.lower()
+            stablecoins_lower = [s.lower() for s in chain_config.stablecoins]
+
+            # Calculate price based on paired token
+            if other_token_lower in stablecoins_lower:
+                price_usd = other_reserve / our_reserve
+                price_native = price_usd / native_price_usd
+            elif other_token_lower == chain_config.wrapped_native.lower():
+                price_native = other_reserve / our_reserve
+                price_usd = price_native * native_price_usd
+            else:
+                continue
+
+            source = f"{pool.dex_name} {pool.token0_symbol}/{pool.token1_symbol}"
+            return price_usd, price_native, native_symbol, source
+
+        return None, None, None, None
