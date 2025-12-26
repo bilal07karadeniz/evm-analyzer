@@ -162,9 +162,9 @@ class MarkdownReport:
             return
 
         # Sort pools by liquidity USD descending
-        sorted_pools = sorted(pools, key=lambda p: p.liquidity_usd, reverse=True)[:5]
+        sorted_pools = sorted(pools, key=lambda p: p.liquidity_usd, reverse=True)[:10]
 
-        self.lines.append("## Liquidity (Top 5)")
+        self.lines.append("## Liquidity (Top 10)")
         self.lines.append("")
         self.lines.append("| DEX | Pair | Reserves | Liquidity |")
         self.lines.append("|-----|------|----------|-----------|")

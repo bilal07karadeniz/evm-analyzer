@@ -250,7 +250,7 @@ def run_analysis(args):
                 web3=web3,
                 chain=args.chain,
                 token_address=args.address,
-                limit=5,
+                limit=10,
                 include_base_pair=True,
             )
 

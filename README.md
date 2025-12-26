@@ -7,7 +7,7 @@ A command-line tool for gathering smart contract security data from EVM-compatib
 - **Token Analysis**: Name, symbol, decimals, total supply
 - **Ownership Detection**: Owner address, renounced status, access control roles
 - **Security Flags**: Transfer fees, max TX limits, blacklist detection, pause status
-- **Liquidity Discovery**: Top 5 pools across multiple DEXes with USD values
+- **Liquidity Discovery**: Top 10 pools across multiple DEXes with USD values
 - **Proxy Detection**: EIP-1967, Beacon, and Transparent proxy patterns
 - **Historical Analysis**: Query contract state at any past block
 - **Multi-chain Support**: Ethereum and BSC (easily extensible)
@@ -149,7 +149,7 @@ The tool auto-detects running Anvil instances by matching chain ID.
 - Owner: `0x0000000000000000000000000000000000000000` (renounced)
 - Has burn()
 
-## Liquidity (Top 5)
+## Liquidity (Top 10)
 
 | DEX | Pair | Reserves | Liquidity |
 |-----|------|----------|-----------|
