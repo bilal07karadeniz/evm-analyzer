@@ -189,6 +189,18 @@ def run_analysis(args):
             if not web3.is_connected():
                 raise RuntimeError(f"Cannot connect to Anvil at {anvil_url}")
 
+            # Detect chain from Anvil's chain ID when using external Anvil
+            detected_chain_id = web3.eth.chain_id
+            chain_id_map = {1: "ethereum", 56: "bsc"}
+            detected_chain = chain_id_map.get(detected_chain_id)
+            if detected_chain:
+                if args.chain != detected_chain and args.chain in ("ethereum", "bsc"):
+                    progress.update(task, description=f"Detected chain: {detected_chain} (chain_id={detected_chain_id})")
+                args.chain = detected_chain
+            elif detected_chain_id not in chain_id_map:
+                # Unknown chain ID - warn but continue with user-specified chain
+                progress.update(task, description=f"Unknown chain_id={detected_chain_id}, using {args.chain}")
+
             # Only reset if --block is explicitly specified
             # Otherwise use Anvil's current fork block as-is
             if args.block:
